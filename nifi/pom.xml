@@ -43,7 +43,7 @@
         <spring.version>4.1.4.RELEASE</spring.version>
         <spring.security.version>3.2.5.RELEASE</spring.security.version>
         <jersey.version>1.19</jersey.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>2.0.5-alpha</hadoop.version>
         <inceptionYear>2014</inceptionYear>
     </properties>
     <dependencyManagement>
@@ -733,6 +733,12 @@
             <dependency>
                 <groupId>org.apache.nifi</groupId>
                 <artifactId>nifi-hadoop-libraries-nar</artifactId>
+                <version>0.1.0-incubating</version>
+                <type>nar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.nifi</groupId>
+                <artifactId>nifi-uds-libraries-nar</artifactId>
                 <version>0.1.0-incubating</version>
                 <type>nar</type>
             </dependency>

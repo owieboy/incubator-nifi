@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>nifi-nar-bundles</artifactId>
+        <groupId>org.apache.nifi</groupId>
+        <version>0.1.0-incubating</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>nifi-uds-bundle</artifactId>
+    <packaging>pom</packaging>
+    <description>A bundle of processors that work with UDS</description>
+    <modules>
+        <module>nifi-uds-nar</module>
+        <module>nifi-uds-processors</module>
+    </modules>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.nifi</groupId>
+                <artifactId>nifi-uds-processors</artifactId>
+                <version>0.1.0-incubating</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

@@ -49,7 +49,7 @@ import org.apache.nifi.util.StopWatch;
         + "The file in HDFS is left intact without any changes being made to it.")
 @WritesAttribute(attribute="hdfs.failure.reason", description="When a FlowFile is routed to 'failure', this attribute is added indicating why the file could "
         + "not be fetched from HDFS")
-@SeeAlso({ListHDFS.class, GetHDFS.class, PutHDFS.class})
+@SeeAlso({GetHDFS.class, PutHDFS.class})
 public class FetchHDFS extends AbstractHadoopProcessor {
     static final PropertyDescriptor FILENAME = new PropertyDescriptor.Builder()
         .name("HDFS Filename")
