@@ -97,10 +97,10 @@ public abstract class AbstractHadoopProcessor extends AbstractProcessor {
                 resources = resetHDFSResources(configResources, dir);
                 hdfsResources.set(resources);
             }
-        } catch (IOException ex) {
-            getLogger().error("HDFS Configuration error - {}", new Object[]{ex});
+        } catch (Exception exc) {
+            getLogger().info("PUTHDFS: setting hdfsResource as null, null");
+            getLogger().error("HDFS Configuration error - {}", new Object[] {exc});
             hdfsResources.set(new Tuple<Configuration, FileSystem>(null, null));
-            throw ex;
         }
     }
 
@@ -160,6 +160,8 @@ public abstract class AbstractHadoopProcessor extends AbstractProcessor {
                         fs.getDefaultReplication(new Path(dir)), config.toString()});
             return new Tuple<>(config, fs);
 
+        } catch(Exception exc){
+            throw new IOException("Generic error caught");
         } finally {
             Thread.currentThread().setContextClassLoader(savedClassLoader);
         }

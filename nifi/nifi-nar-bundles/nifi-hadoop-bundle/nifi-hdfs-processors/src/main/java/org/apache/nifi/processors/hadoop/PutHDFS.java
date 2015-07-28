@@ -83,6 +83,13 @@ public class PutHDFS extends AbstractHadoopProcessor {
                     "Files that could not be written to HDFS for some reason are transferred to this relationship")
             .build();
 
+
+    public static final Relationship ATTRIBUTES_ONLY = new Relationship.Builder()
+            .name("attributes_only")
+            .description(
+                    "Copy of flowfile transferred to SUCCESS but has empty content. Created using processSession.create(flowFile)")
+            .build();
+
     // properties
     public static final PropertyDescriptor DIRECTORY = new PropertyDescriptor.Builder()
             .name(DIRECTORY_PROP_NAME)
@@ -146,6 +153,7 @@ public class PutHDFS extends AbstractHadoopProcessor {
         final Set<Relationship> rels = new HashSet<>();
         rels.add(REL_SUCCESS);
         rels.add(REL_FAILURE);
+        rels.add(ATTRIBUTES_ONLY);
         relationships = Collections.unmodifiableSet(rels);
 
         List<PropertyDescriptor> props = new ArrayList<>(properties);
@@ -175,15 +183,21 @@ public class PutHDFS extends AbstractHadoopProcessor {
         super.abstractOnScheduled(context);
 
         // Set umask once, to avoid thread safety issues doing it in onTrigger
-        final PropertyValue umaskProp = context.getProperty(UMASK);
         final short dfsUmask;
-        if (umaskProp.isSet()) {
-            dfsUmask = Short.parseShort(umaskProp.getValue(), 8);
-        } else {
-            dfsUmask = FsPermission.DEFAULT_UMASK;
+        final Configuration conf;
+        try {
+            final PropertyValue umaskProp = context.getProperty(UMASK);
+            if (umaskProp.isSet()) {
+                dfsUmask = Short.parseShort(umaskProp.getValue(), 8);
+            } else {
+                dfsUmask = FsPermission.DEFAULT_UMASK;
+            }
+            conf = getConfiguration();
+            FsPermission.setUMask(conf, new FsPermission(dfsUmask));
+        } catch (Exception e) {
+            getLogger().info("PutHDFS @OnScheduled error encountered - {}", new Object[]{e});
+            e.printStackTrace();
         }
-        final Configuration conf = getConfiguration();
-        FsPermission.setUMask(conf, new FsPermission(dfsUmask));
     }
 
     @Override
@@ -247,7 +261,9 @@ public class PutHDFS extends AbstractHadoopProcessor {
                     case IGNORE_RESOLUTION:
                         session.transfer(flowFile, REL_SUCCESS);
                         getLogger().info("transferring {} to success because file with same name already exists",
-                                new Object[]{flowFile});
+                                new Object[] {flowFile});
+                        FlowFile trigger = session.create(flowFile);
+                        session.transfer(trigger, ATTRIBUTES_ONLY);
                         return;
                     case FAIL_RESOLUTION:
                         flowFile = session.penalize(flowFile);
@@ -318,13 +334,14 @@ public class PutHDFS extends AbstractHadoopProcessor {
             changeOwner(context, hdfs, copyFile);
 
             getLogger().info("copied {} to HDFS at {} in {} milliseconds at a rate of {}",
-                    new Object[]{flowFile, copyFile, millis, dataRate});
+                    new Object[] {flowFile, copyFile, millis, dataRate});
 
             final String filename = copyFile.toString();
             final String transitUri = (filename.startsWith("/")) ? "hdfs:/" + filename : "hdfs://" + filename;
             session.getProvenanceReporter().send(flowFile, transitUri);
             session.transfer(flowFile, REL_SUCCESS);
-
+            FlowFile trigger = session.create(flowFile);
+            session.transfer(trigger, ATTRIBUTES_ONLY);
         } catch (final Throwable t) {
             if (tempDotCopyFile != null) {
                 try {
