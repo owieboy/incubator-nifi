@@ -16,14 +16,9 @@
  */
 package org.apache.nifi.processors.hadoop;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -37,11 +32,7 @@ import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.SeeAlso;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
-import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.components.PropertyValue;
-import org.apache.nifi.components.ValidationContext;
-import org.apache.nifi.components.ValidationResult;
-import org.apache.nifi.components.Validator;
+import org.apache.nifi.components.*;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
 import org.apache.nifi.processor.DataUnit;
@@ -238,15 +229,8 @@ public class PutHDFS extends AbstractHadoopProcessor {
             copyFile = new Path(configuredRootDirPath, flowFile.getAttribute(CoreAttributes.FILENAME.key()));
 
             // Create destination directory if it does not exist
-            try {
-                if (!hdfs.getFileStatus(configuredRootDirPath).isDirectory()) {
-                    throw new IOException(configuredRootDirPath.toString() + " already exists and is not a directory");
-                }
-            } catch (FileNotFoundException fe) {
-                if (!hdfs.mkdirs(configuredRootDirPath)) {
-                    throw new IOException(configuredRootDirPath.toString() + " could not be created");
-                }
-                changeOwner(context, hdfs, configuredRootDirPath);
+            if (!hdfs.getFileStatus(configuredRootDirPath).isDirectory()) {
+                throw new IOException(configuredRootDirPath.toString() + " already exists and is not a directory");
             }
 
             // If destination file already exists, resolve that based on processor configuration
@@ -351,8 +335,9 @@ public class PutHDFS extends AbstractHadoopProcessor {
                 }
             }
             getLogger().error("Failed to write to HDFS due to {}", t);
-            session.rollback();
-            context.yield();
+            session.transfer(flowFile, REL_FAILURE);
+            //session.rollback();
+            //context.yield();
         }
     }
 
